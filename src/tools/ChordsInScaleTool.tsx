@@ -226,6 +226,12 @@ export function ChordsInScaleTool() {
 function ChordTable({ chords }: { chords: ResolvedChord[] }) {
   const columns: Column<ResolvedChord>[] = [
     {
+      key: "full",
+      header: "Full name",
+      className: "font-semibold text-neutral-100",
+      render: (c) => `${noteName(c.root)} ${c.chord.name}`,
+    },
+    {
       key: "chord",
       header: "Chord",
       className: "font-semibold text-neutral-100",
