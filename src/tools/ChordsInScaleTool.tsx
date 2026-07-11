@@ -96,8 +96,8 @@ export function ChordsInScaleTool() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Segmented<Mode>
             options={[
-              { value: "notes", label: "By notes" },
-              { value: "rootname", label: "By root + name" },
+              { value: "notes", label: "Build" },
+              { value: "rootname", label: "Select" },
             ]}
             value={mode}
             onChange={setMode}
@@ -108,16 +108,13 @@ export function ChordsInScaleTool() {
         {mode === "notes" ? (
           <div className="mt-4 space-y-3">
             <div>
-              <SectionLabel>Notes</SectionLabel>
+              <SectionLabel>Select Notes</SectionLabel>
               <NoteMultiSelector selected={selected} tonic={tonic} onToggle={toggleNote} />
+              <SemitoneMap notes={selected} />
             </div>
             <div>
-              <SectionLabel>Tonic</SectionLabel>
+              <SectionLabel>Select Tonic</SectionLabel>
               <TonicRow notes={selected} tonic={tonic} onPick={setTonicSel} />
-            </div>
-            <div>
-              <SectionLabel>Semitone distance map</SectionLabel>
-              <SemitoneMap notes={selected} tonic={tonic} />
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -156,7 +153,7 @@ export function ChordsInScaleTool() {
 
       <Panel className="p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <SectionLabel>Chords in selection</SectionLabel>
+          <SectionLabel>Chords in Scale</SectionLabel>
           <div className="flex flex-wrap gap-2">
             <Toggle
               checked={toggles.aug}
@@ -184,7 +181,10 @@ export function ChordsInScaleTool() {
       </Panel>
 
       <Panel className="p-4">
-        <SectionLabel>Overlapping scales — 5+ shared notes (check one to pivot)</SectionLabel>
+        <SectionLabel>Overlapping Scales Table</SectionLabel>
+        <p className="mb-3 mt-1 text-xs text-neutral-400">
+            Scales that share notes with your selected scale.
+          </p>
         <div className="mt-3">
           <OverlapAccordion
             overlaps={overlaps}
@@ -201,16 +201,10 @@ export function ChordsInScaleTool() {
       </Panel>
 
       <Panel className="p-4">
-        <SectionLabel>
-          Pivot scales — share 5+ notes with your scale and the checked scale
-        </SectionLabel>
-        {pivotSource && (
+        <SectionLabel>Pivot Scales Table</SectionLabel>
           <p className="mb-3 mt-1 text-xs text-neutral-400">
-            Scales that also share 5+ notes with{" "}
-            <span className="text-neutral-200">{pivotSource.name}</span>. Bright squares are the
-            notes shared with your scale.
+            Scales that share notes with your selected scale and the scale you checked from the overlapping scale table.
           </p>
-        )}
         <div className="mt-3">
           <OverlapAccordion
             overlaps={pivots}
@@ -375,10 +369,10 @@ function Caret({ open }: { open: boolean }) {
 
 const OVERLAP_COLS = 4;
 const OVERLAP_HEADERS = [
-  "Scale",
-  "Semitones",
-  "Notes (shared = bright)",
-  "Chords (shared = coloured)",
+  "Scale Name",
+  "Relative Semitones",
+  "Shared Notes",
+  "Shared Chords",
 ];
 
 /**
@@ -515,7 +509,7 @@ function OverlapAccordion({
                       {fam.label}
                       <span className="text-xs font-normal text-neutral-500">
                         {fam.rows.length} scale{fam.rows.length === 1 ? "" : "s"} · up to{" "}
-                        {fam.maxShared} shared
+                        {fam.maxShared} shared notes
                       </span>
                     </button>
                   </td>

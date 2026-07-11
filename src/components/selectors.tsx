@@ -1,5 +1,5 @@
-import { Fragment, ReactNode } from "react";
-import { mod12, NOTE_NAMES_SHARP, noteName, PitchClass } from "../theory/notes";
+import { ReactNode } from "react";
+import { NOTE_NAMES_SHARP, noteName, PitchClass } from "../theory/notes";
 import { functionForRoot } from "../theory/functions";
 import {
   NAMED_PENTATONICS,
@@ -196,55 +196,36 @@ export function NoteDisplayRow({
 }
 
 /**
- * Beginner-friendly semitone distance map: the notes in tonic order, the step
- * between each (from the previous note), and each note's distance from the tonic.
+ * Subtle semitone-step reminder aligned to the 12-note selector above. Each `+N`
+ * is centred between the two selected notes it spans — e.g. C + D put "+2" under
+ * the C# square. Uses the selector's geometry (w-10 squares = 2.5rem, gap-1 =
+ * 0.25rem, so 2.75rem per square step; a square centre is +1.25rem into itself).
  */
-export function SemitoneMap({
-  notes,
-  tonic,
-}: {
-  notes: PitchClass[];
-  tonic: PitchClass | null;
-}) {
-  if (notes.length === 0 || tonic == null) return null;
+export function SemitoneMap({ notes }: { notes: PitchClass[] }) {
   const sorted = [...new Set(notes)].sort((a, b) => a - b);
-  const ti = sorted.indexOf(tonic);
-  const ordered = ti >= 0 ? [...sorted.slice(ti), ...sorted.slice(0, ti)] : sorted;
+  if (sorted.length < 2) return null;
+
+  const gaps = sorted
+    .slice(0, -1)
+    .map((a, i) => ({ a, b: sorted[i + 1], step: sorted[i + 1] - a }));
 
   return (
-    <div className="flex items-start gap-1 overflow-x-auto pb-1">
-      {ordered.map((pc, i) => {
-        const next = i + 1 < ordered.length ? ordered[i + 1] : tonic;
-        const step = mod12(next - pc) || 12;
-        return (
-          <Fragment key={pc}>
-            <div className="flex shrink-0 flex-col items-center gap-1">
-              <span
-                className={`grid h-7 w-8 place-items-center text-xs font-bold ${noteFnFill(
-                  pc,
-                  tonic
-                )}`}
-              >
-                {noteName(pc)}
-              </span>
-              <span className="font-mono text-[10px] text-neutral-500">{mod12(pc - tonic)}</span>
-            </div>
-            <div className="flex shrink-0 flex-col items-center pt-1.5">
-              <span className="text-[10px] font-semibold text-neutral-300">+{step}</span>
-              <span className="mt-1 h-px w-6 bg-neutral-600" />
-            </div>
-          </Fragment>
-        );
-      })}
-      {/* Octave: back to the tonic 12 semitones up. */}
-      <div className="flex shrink-0 flex-col items-center gap-1 opacity-50">
-        <span
-          className={`grid h-7 w-8 place-items-center text-xs font-bold ${noteFnFill(tonic, tonic)}`}
-        >
-          {noteName(tonic)}
-        </span>
-        <span className="font-mono text-[10px] text-neutral-500">12</span>
+    <div className="relative mt-1">
+      {/* Invisible spacer matching the 12 note squares so widths line up. */}
+      <div className="flex gap-1" aria-hidden>
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div key={i} className="h-4 w-10" />
+        ))}
       </div>
+      {gaps.map((g, i) => (
+        <span
+          key={i}
+          className="absolute top-0 -translate-x-1/2 font-mono text-xs text-neutral-500"
+          style={{ left: `calc(${(g.a + g.b) / 2} * 2.75rem + 1.25rem)` }}
+        >
+          +{g.step}
+        </span>
+      ))}
     </div>
   );
 }
