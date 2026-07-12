@@ -487,7 +487,7 @@ function OverlapAccordion({
             {headers.map((h, i) => (
               <th
                 key={h || `col-${i}`}
-                className="whitespace-nowrap border-b border-neutral-700 px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-400"
+                className="whitespace-nowrap border-b border-neutral-700 px-10 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-400"
               >
                 {h}
               </th>
@@ -500,7 +500,7 @@ function OverlapAccordion({
             return (
               <Fragment key={fam.key}>
                 <tr className="bg-neutral-900/40">
-                  <td colSpan={cols} className="border-b border-neutral-800/70 px-2 py-1.5">
+                  <td colSpan={cols} className="border-b border-neutral-800/70 px-10 py-1.5">
                     <button
                       onClick={() => toggleFam(fam.key)}
                       className="flex w-full items-center gap-2 text-left text-sm font-semibold text-neutral-100"
@@ -526,7 +526,7 @@ function OverlapAccordion({
                         }`}
                       >
                         {selectable && (
-                          <td className="px-2.5 py-1.5 align-top">
+                          <td className="px-10 py-1.5 align-top">
                             <input
                               type="checkbox"
                               checked={selectedKey === key}
@@ -536,16 +536,16 @@ function OverlapAccordion({
                             />
                           </td>
                         )}
-                        <td className="px-2.5 py-1.5 pl-7 align-top font-semibold text-neutral-100">
+                        <td className="px-10 py-1.5 pl-7 align-top font-semibold text-neutral-100">
                           {o.name}
                         </td>
-                        <td className="px-2.5 py-1.5 align-top font-mono text-neutral-300">
+                        <td className="px-10 py-1.5 align-top font-mono text-neutral-300">
                           {o.code}
                         </td>
-                        <td className="px-2.5 py-1.5 align-top">
+                        <td className="px-10 py-1.5 align-top">
                           <NoteSquares notes={o.notes} shared={o.common} tonic={tonic} />
                         </td>
-                        <td className="w-full px-2.5 py-1.5 align-top">
+                        <td className="w-full px-10 py-1.5 align-top">
                           <ChordChips chords={o.scaleChords} common={o.common} tonic={tonic} />
                         </td>
                       </tr>

@@ -286,13 +286,39 @@ describe("v2: pivotScales", () => {
     }
   });
 
-  it("highlighted notes are the ones shared with the main scale", () => {
+  it("highlighted notes are shared with BOTH source scales", () => {
     const cSet = new Set(cMajor);
-    for (const p of pivots) for (const n of p.common) expect(cSet.has(n)).toBe(true);
+    const gSet = new Set(gMajor);
+    for (const p of pivots)
+      for (const n of p.common) {
+        expect(cSet.has(n)).toBe(true);
+        expect(gSet.has(n)).toBe(true);
+      }
   });
 
   it("D Major is a valid pivot between C and G major", () => {
     expect(pivots.some((p) => p.name === "D Major")).toBe(true);
+  });
+});
+
+describe("v2: pivotScales highlights only notes common to both sources", () => {
+  // Reproduces the reported bug: C Major (main) + B Natural minor (checked).
+  // The E Natural minor pivot must not highlight C, which is absent from B minor.
+  const cMajor = scaleNotesAt(scaleById("major")!, 0);
+  const bMinor = scaleNotesAt(scaleById("natural-minor")!, 11);
+  const pivots = pivotScales(cMajor, 0, bMinor, { minCommon: 5 });
+  const eMinor = pivots.find((p) => p.name === "E Natural minor");
+
+  it("includes E Natural minor as a pivot", () => {
+    expect(eMinor).toBeDefined();
+  });
+
+  it("does not highlight C (absent from B Natural minor)", () => {
+    expect(eMinor!.common).not.toContain(0); // 0 = C
+  });
+
+  it("highlights E, G, A, B, D (shared by all three)", () => {
+    for (const pc of [4, 7, 9, 11, 2]) expect(eMinor!.common).toContain(pc);
   });
 });
 

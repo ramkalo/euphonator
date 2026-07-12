@@ -405,9 +405,8 @@ function sameNoteSet(set: Set<PitchClass>, notes: PitchClass[]): boolean {
  * Pivot scales: catalog scales (all 12 roots) sharing at least `minCommon` notes
  * with BOTH the main selection and a second (chosen) scale — scales you can move
  * through to bridge the two. The two source scales (and their note-set twins) are
- * excluded. To read/sort consistently with the overlap table, `common` (the
- * highlighted notes) is the pivot's overlap with the MAIN scale; the second scale
- * only acts as a filter.
+ * excluded. `common` (the highlighted notes) is the pivot's overlap with BOTH source
+ * scales: the notes present in the pivot, the main scale, and the second scale.
  */
 export function pivotScales(
   mainNotes: PitchClass[],
@@ -432,7 +431,7 @@ export function pivotScales(
       }
       if (sharedMain < minCommon || sharedOther < minCommon) continue;
 
-      const common = scaleNotes.filter((n) => mainSet.has(n));
+      const common = scaleNotes.filter((n) => mainSet.has(n) && otherSet.has(n));
       const sharedTonic = common.includes(mainTonic) ? mainTonic : common[0] ?? scaleNotes[0];
       out.push({
         scale,
