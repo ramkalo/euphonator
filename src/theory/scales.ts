@@ -40,8 +40,8 @@ export const HEPTATONIC_SCALES: Scale[] = [
   heptatonic("harmonic-major", "Harmonic Major", "less-common", [0, 1, 2, 1, 3, 1, 2, 2]),
   heptatonic("melodic-minor", "Melodic minor", "less-common", [0, 2, 1, 2, 2, 2, 2, 1]),
   heptatonic("hungarian-major", "Hungarian Major", "less-common", [0, 2, 1, 2, 3, 1, 2, 1]),
-  heptatonic("dramatic-minor", "Dramatic minor", "less-common", [0, 2, 1, 3, 2, 1, 2, 1]),
-  heptatonic("neapolitan-minor", "Neapolitan Minor", "less-common", [0, 1, 2, 2, 2, 1, 3, 1]),
+  heptatonic("super-locrian", "Super Locrian", "less-common", [0, 2, 1, 3, 2, 1, 2, 1]),
+  heptatonic("neapolitan-minor", "Neapolitan minor", "less-common", [0, 1, 2, 2, 2, 1, 3, 1]),
   heptatonic("enigmatic", "Enigmatic", "less-common", [0, 1, 3, 2, 2, 2, 1, 1]),
 ];
 

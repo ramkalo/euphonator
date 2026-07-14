@@ -81,7 +81,7 @@ F #
 | Harmonic Major  | 0 1 2 1 3 1 2 2              | C Db Eb E G Ab Bb C |
 | Melodic minor   | 0 2 1 2 2 2 2 1              | C D Eb F G A B C   |
 | Hungarian Major | 0 2 1 2 3 1 2 1              | C D Eb F G# A B C  |
-| Dramatic Minor  | 0 2 1 3 2 1 2 1              | C D Eb F# G# A B C |
+| Super Locrian   | 0 2 1 3 2 1 2 1              | C D Eb F# G# A B C |
 | Neapolitan Major | 0 1 2 2 2 2 2 1             | C Db Eb F G A B C  |
 | Neapolitan Minor | 0 1 2 2 2 1 3 1             | C Db Eb F G Ab B C |
 | Enigmatic       | 0 1 3 2 2 2 1 1              | C Db E F# G# A# B C |
