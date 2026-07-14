@@ -6,7 +6,7 @@ export interface Scale {
   id: string;
   name: string;
   family: ScaleFamily;
-  /** "conventional" | "unconventional" for heptatonic; undefined for pentatonic. */
+  /** "common" | "less-common" for heptatonic; undefined for pentatonic. */
   subfamily?: string;
   /** Pentatonic index number (Ram Kalo Pentatonic Index). */
   index?: number;
@@ -24,7 +24,7 @@ export interface Scale {
 function heptatonic(
   id: string,
   name: string,
-  subfamily: "conventional" | "unconventional",
+  subfamily: "common" | "less-common",
   steps: number[]
 ): Scale {
   const fromRoot = shapeToPitchClasses(steps);
@@ -33,13 +33,16 @@ function heptatonic(
 
 // --- Heptatonic scales (source doc) ---
 export const HEPTATONIC_SCALES: Scale[] = [
-  heptatonic("major", "Major", "conventional", [0, 2, 2, 1, 2, 2, 2, 1]),
-  heptatonic("natural-minor", "Natural minor", "conventional", [0, 2, 1, 2, 2, 1, 2, 2]),
-  heptatonic("harmonic-minor", "Harmonic minor", "conventional", [0, 2, 1, 2, 2, 1, 3, 1]),
-  heptatonic("melodic-minor", "Melodic minor", "conventional", [0, 2, 1, 2, 2, 2, 2, 1]),
-  heptatonic("sardonic-minor", "Sardonic minor", "unconventional", [0, 2, 1, 2, 3, 1, 2, 1]),
-  heptatonic("dramatic-minor", "Dramatic minor", "unconventional", [0, 2, 1, 3, 2, 1, 2, 1]),
-  heptatonic("toxic-minor", "Toxic minor", "unconventional", [0, 2, 2, 2, 1, 3, 1, 1]),
+  heptatonic("major", "Major", "common", [0, 2, 2, 1, 2, 2, 2, 1]),
+  heptatonic("natural-minor", "Natural minor", "common", [0, 2, 1, 2, 2, 1, 2, 2]),
+  heptatonic("neapolitan-major", "Neapolitan Major", "less-common", [0, 1, 2, 2, 2, 2, 2, 1]),
+  heptatonic("harmonic-minor", "Harmonic minor", "less-common", [0, 2, 1, 2, 2, 1, 3, 1]),
+  heptatonic("harmonic-major", "Harmonic Major", "less-common", [0, 1, 2, 1, 3, 1, 2, 2]),
+  heptatonic("melodic-minor", "Melodic minor", "less-common", [0, 2, 1, 2, 2, 2, 2, 1]),
+  heptatonic("hungarian-major", "Hungarian Major", "less-common", [0, 2, 1, 2, 3, 1, 2, 1]),
+  heptatonic("dramatic-minor", "Dramatic minor", "less-common", [0, 2, 1, 3, 2, 1, 2, 1]),
+  heptatonic("neapolitan-minor", "Neapolitan Minor", "less-common", [0, 1, 2, 2, 2, 1, 3, 1]),
+  heptatonic("enigmatic", "Enigmatic", "less-common", [0, 1, 3, 2, 2, 2, 1, 1]),
 ];
 
 // --- Ram Kalo Pentatonic Index (source doc, complete: 66 = (1/12)·C(12,5)) ---

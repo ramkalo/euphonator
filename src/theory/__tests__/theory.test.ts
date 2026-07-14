@@ -99,6 +99,22 @@ describe("scales", () => {
   it("heptatonic scales all have 7 notes", () => {
     for (const s of HEPTATONIC_SCALES) expect(s.fromRoot.length).toBe(7);
   });
+
+  it("new less-common scales have the expected pitch classes from root", () => {
+    // Neapolitan Major on C = C Db Eb F G A B
+    expect(scaleById("neapolitan-major")!.fromRoot).toEqual([0, 1, 3, 5, 7, 9, 11]);
+    // Neapolitan Minor on C = C Db Eb F G Ab B
+    expect(scaleById("neapolitan-minor")!.fromRoot).toEqual([0, 1, 3, 5, 7, 8, 11]);
+    // Enigmatic on C = C Db E F# G# A# B
+    expect(scaleById("enigmatic")!.fromRoot).toEqual([0, 1, 4, 6, 8, 10, 11]);
+    // Harmonic Major on C = C Db Eb E G Ab Bb
+    expect(scaleById("harmonic-major")!.fromRoot).toEqual([0, 1, 3, 4, 7, 8, 10]);
+  });
+
+  it("only Major and Natural minor are in the 'common' subfamily", () => {
+    const common = HEPTATONIC_SCALES.filter((s) => s.subfamily === "common").map((s) => s.id);
+    expect(common).toEqual(["major", "natural-minor"]);
+  });
 });
 
 describe("tool 1: chords in scale", () => {

@@ -146,7 +146,13 @@ function ScaleButton({
           ? "bg-ocean-500 text-white shadow"
           : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
       }`}
-      title={scale.subfamily}
+      title={
+        scale.subfamily === "common"
+          ? "Common"
+          : scale.subfamily === "less-common"
+          ? "Less Common"
+          : scale.subfamily
+      }
     >
       {scale.name}
     </button>
@@ -239,8 +245,8 @@ export function ScalePicker({
 }) {
   const current = scaleById(value);
   const family: "heptatonic" | "pentatonic" = current?.family ?? "heptatonic";
-  const conventional = HEPTATONIC_SCALES.filter((s) => s.subfamily === "conventional");
-  const unconventional = HEPTATONIC_SCALES.filter((s) => s.subfamily === "unconventional");
+  const common = HEPTATONIC_SCALES.filter((s) => s.subfamily === "common");
+  const lessCommon = HEPTATONIC_SCALES.filter((s) => s.subfamily === "less-common");
   // The RK-index select only reflects a value when a raw RK shape is chosen.
   const rkValue = current && current.index != null && !current.named ? value : "";
 
@@ -260,13 +266,13 @@ export function ScalePicker({
 
       {family === "heptatonic" ? (
         <div className="space-y-2">
-          <PickerRow label="Conventional">
-            {conventional.map((s) => (
+          <PickerRow label="Common">
+            {common.map((s) => (
               <ScaleButton key={s.id} scale={s} value={value} onChange={onChange} />
             ))}
           </PickerRow>
-          <PickerRow label="Unconventional">
-            {unconventional.map((s) => (
+          <PickerRow label="Less Common">
+            {lessCommon.map((s) => (
               <ScaleButton key={s.id} scale={s} value={value} onChange={onChange} />
             ))}
           </PickerRow>

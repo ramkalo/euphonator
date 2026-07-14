@@ -65,24 +65,26 @@ F #
 
 # Septatonic Scales
 
-### Conventional Scales
+### Common Scales
 
 | Name           | Semitones From Previous Note | Semitones From Root | Notes              | Shortcut                                | Mode    |
 | -------------- | ---------------------------- | ------------------- | ------------------ | --------------------------------------- | ------- |
-| Conventional   | -----                        | -----               | -----              | -----                                   | -----   |
 | Major          | 0 2 2 1 2 2 2 1              | 0 2 4 5 7 9 11 12   | C D E F G A B C    | White keys starting at C                | Ionian  |
 | Natural minor  | 0 2 1 2 2 1 2 2              | 0 2 3 5 7 8 10 12   | C D Eb F Ab Bb C   | White keys starting at A                | Aeolian |
-| Harmonic minor | 0 2 1 2 2 1 3 1              | 0 2 3 5 7 8 11 12   | C D Eb F G Ab B C  | White keys starting at A with G#        | N/A     |
-| Melodic minor  | 0 2 1 2 2 2 2 1              | 0 2 3 5 7 9 11 12   | C D Eb F G A B C   | White keys starting at A with F# and G# | N/A     |
 
 
-### Unconventional Scales
+### Less Common Scales
 
-| Name           | Semitones From Previous Note | Notes              |
-| -------------- | ---------------------------- | ------------------ |
-| Sardonic Minor | 0 2 1 2 3 1 2 1              | C D Eb F G# A B C  |
-| Dramatic Minor | 0 2 1 3 2 1 2 1              | C D Eb F# G# A B C |
-| Toxic Minor    | 0 2 2 2 1 3 1 1              | C D E F# G A# B C  |
+| Name            | Semitones From Previous Note | Notes              |
+| --------------- | ---------------------------- | ------------------ |
+| Harmonic minor  | 0 2 1 2 2 1 3 1              | C D Eb F G Ab B C  |
+| Harmonic Major  | 0 1 2 1 3 1 2 2              | C Db Eb E G Ab Bb C |
+| Melodic minor   | 0 2 1 2 2 2 2 1              | C D Eb F G A B C   |
+| Hungarian Major | 0 2 1 2 3 1 2 1              | C D Eb F G# A B C  |
+| Dramatic Minor  | 0 2 1 3 2 1 2 1              | C D Eb F# G# A B C |
+| Neapolitan Major | 0 1 2 2 2 2 2 1             | C Db Eb F G A B C  |
+| Neapolitan Minor | 0 1 2 2 2 1 3 1             | C Db Eb F G Ab B C |
+| Enigmatic       | 0 1 3 2 2 2 1 1              | C Db E F# G# A# B C |
 
 # Ram Kalo Pentatonic Index
 

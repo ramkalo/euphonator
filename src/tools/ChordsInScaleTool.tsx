@@ -275,7 +275,7 @@ function ChordTable({ chords }: { chords: ResolvedChord[] }) {
 
 // --- Overlapping-scales accordion ----------------------------------------
 
-type OverlapCategoryId = "conventional" | "unconventional" | "pentatonic";
+type OverlapCategoryId = "common" | "less-common" | "pentatonic";
 
 interface OverlapFamily {
   key: string;
@@ -293,13 +293,13 @@ interface OverlapCategory {
 
 function categoryOf(scale: Scale): OverlapCategoryId {
   if (scale.family === "pentatonic") return "pentatonic";
-  return scale.subfamily === "unconventional" ? "unconventional" : "conventional";
+  return scale.subfamily === "less-common" ? "less-common" : "common";
 }
 
 // Fixed family order = the catalog definition order, so both tables agree.
 const SCALE_ORDER = new Map(ALL_SCALES.map((s, i) => [s.id, i]));
 
-/** Group overlap rows by scale family, under Conventional / Unconventional / Pentatonic. */
+/** Group overlap rows by scale family, under Common / Less Common / Pentatonic. */
 function groupOverlaps(overlaps: CommonOverlap[]): OverlapCategory[] {
   const fams = new Map<string, OverlapFamily>();
   for (const o of overlaps) {
@@ -339,8 +339,8 @@ function groupOverlaps(overlaps: CommonOverlap[]): OverlapCategory[] {
   }
 
   const meta: { id: OverlapCategoryId; name: string }[] = [
-    { id: "conventional", name: "Conventional" },
-    { id: "unconventional", name: "Unconventional" },
+    { id: "common", name: "Common" },
+    { id: "less-common", name: "Less Common" },
     { id: "pentatonic", name: "Pentatonic" },
   ];
   return meta
@@ -458,7 +458,7 @@ function OverlapAccordion({
   selectedKey?: string | null;
   onSelect?: (o: CommonOverlap) => void;
 }) {
-  // Families flattened in category order (conventional -> unconventional -> pentatonic).
+  // Families flattened in category order (common -> less-common -> pentatonic).
   const families = useMemo(
     () => groupOverlaps(overlaps).flatMap((c) => c.families),
     [overlaps]
