@@ -8,6 +8,8 @@ export type ChordQuality =
   | "diminished"
   | "sus"
   | "other";
+/** Family grouping for unconventional chords (undefined for triads). */
+export type ChordFamily = "kamala" | "tanava" | "panka" | "sankula";
 
 export interface ChordType {
   name: string;
@@ -18,6 +20,7 @@ export interface ChordType {
   fromRoot: PitchClass[];
   category: ChordCategory;
   quality: ChordQuality;
+  family?: ChordFamily;
 }
 
 function chord(
@@ -25,9 +28,18 @@ function chord(
   abbr: string,
   shape: number[],
   category: ChordCategory,
-  quality: ChordQuality
+  quality: ChordQuality,
+  family?: ChordFamily
 ): ChordType {
-  return { name, abbr, shape, fromRoot: shapeToPitchClasses(shape), category, quality };
+  return {
+    name,
+    abbr,
+    shape,
+    fromRoot: shapeToPitchClasses(shape),
+    category,
+    quality,
+    family,
+  };
 }
 
 // --- Conventional triads (source doc, "Conventional Chords") ---
@@ -43,20 +55,20 @@ export const TRIADS: ChordType[] = [
 // --- Unconventional chords (source doc, "Unconventional Chords") ---
 // Verified against the "ex. Chord Notes" column with C as root.
 export const UNCONVENTIONAL_CHORDS: ChordType[] = [
-  chord("Chromatic Cluster", "ChrClst", [0, 1, 1], "unconventional", "other"),
-  chord("Forte32", "F32", [0, 1, 2], "unconventional", "other"),
-  chord("Tanavaka", "kTan", [0, 1, 3], "unconventional", "other"),
-  chord("Tanava", "Tan", [0, 1, 4], "unconventional", "other"),
-  chord("Tanavatara", "rTan", [0, 1, 5], "unconventional", "other"),
-  chord("Tanavatama", "mTan", [0, 1, 6], "unconventional", "other"),
-  chord("Sukamala", "sKama", [0, 1, 7], "unconventional", "other"),
-  chord("Sankula", "San", [0, 1, 8], "unconventional", "other"),
-  chord("Sankulatara", "rSan", [0, 1, 9], "unconventional", "other"),
-  chord("Sankulatama", "mSan", [0, 2, 2], "unconventional", "other"),
-  chord("Suvṛddhakamala", "svKama", [0, 2, 3], "unconventional", "other"),
-  chord("Panka", "Pan", [0, 2, 4], "unconventional", "other"),
-  chord("Pankatara", "rPan", [0, 2, 6], "unconventional", "other"),
-  chord("Pankatama", "mPan", [0, 2, 7], "unconventional", "other"),
+  chord("Chromatic Cluster", "ChrClst", [0, 1, 1], "unconventional", "other", "tanava"),
+  chord("Forte32", "F32", [0, 1, 2], "unconventional", "other", "tanava"),
+  chord("Tanavaka", "kTan", [0, 1, 3], "unconventional", "other", "tanava"),
+  chord("Tanava", "Tan", [0, 1, 4], "unconventional", "other", "tanava"),
+  chord("Tanavatara", "rTan", [0, 1, 5], "unconventional", "other", "tanava"),
+  chord("Tanavatama", "mTan", [0, 1, 6], "unconventional", "other", "tanava"),
+  chord("Sukamala", "sKama", [0, 1, 7], "unconventional", "other", "kamala"),
+  chord("Sankula", "San", [0, 1, 8], "unconventional", "other", "sankula"),
+  chord("Sankulatara", "rSan", [0, 1, 9], "unconventional", "other", "sankula"),
+  chord("Sankulatama", "mSan", [0, 2, 2], "unconventional", "other", "sankula"),
+  chord("Suvṛddhakamala", "svKama", [0, 2, 3], "unconventional", "other", "kamala"),
+  chord("Panka", "Pan", [0, 2, 4], "unconventional", "other", "panka"),
+  chord("Pankatara", "rPan", [0, 2, 6], "unconventional", "other", "panka"),
+  chord("Pankatama", "mPan", [0, 2, 7], "unconventional", "other", "panka"),
 ];
 
 export const ALL_CHORD_TYPES: ChordType[] = [...TRIADS, ...UNCONVENTIONAL_CHORDS];

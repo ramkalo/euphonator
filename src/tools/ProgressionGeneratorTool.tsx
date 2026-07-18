@@ -1,26 +1,25 @@
 import { useState } from "react";
-import { Keyboard } from "../components/Keyboard";
-import { KeySelector, ScalePicker } from "../components/selectors";
+import { ScaleInfoCard } from "../components/ScaleInfoCard";
 import { FunctionBadge, RomanBadge } from "../components/badges";
-import { FUNCTION_STYLE, NoteChip, Panel, SectionLabel, Segmented, Toggle } from "../components/ui";
+import { FUNCTION_STYLE, NoteChip, Panel, SectionLabel, Segmented } from "../components/ui";
 import {
   ProgressionSlot,
   ResolvedChord,
   candidatesForFunction,
-  generateProgression,
+  generateProgressionFromNotes,
 } from "../theory/analysis";
-import { noteName, PitchClass } from "../theory/notes";
-import { scaleById } from "../theory/scales";
+import { PitchClass, spellNote } from "../theory/notes";
 import {
   PROGRESSION_CATEGORIES,
   ProgressionPattern,
   categoryById,
 } from "../theory/progressions";
-import { DEFAULT_TOGGLES, scaleHighlights, togglesToOptions } from "./shared";
+import { ScaleSelection } from "./useScaleSelection";
+import { ChordToggleBar } from "./ChordToggleBar";
+import { DEFAULT_TOGGLES, togglesToOptions } from "./shared";
 
-export function ProgressionGeneratorTool() {
-  const [root, setRoot] = useState<PitchClass>(0);
-  const [scaleId, setScaleId] = useState("major");
+export function ProgressionGeneratorTool({ scale }: { scale: ScaleSelection }) {
+  const { tonic, notes: scaleNotes } = scale;
   const [categoryId, setCategoryId] = useState(PROGRESSION_CATEGORIES[0].id);
   const [patternId, setPatternId] = useState<string>("random");
   const [toggles, setToggles] = useState({ ...DEFAULT_TOGGLES });
@@ -29,7 +28,6 @@ export function ProgressionGeneratorTool() {
   const [pool, setPool] = useState<ResolvedChord[]>([]);
   const [swapIndex, setSwapIndex] = useState<number | null>(null);
 
-  const scale = scaleById(scaleId)!;
   const category = categoryById(categoryId)!;
 
   function pickPattern(): ProgressionPattern {
@@ -41,7 +39,12 @@ export function ProgressionGeneratorTool() {
 
   function generate() {
     const pattern = pickPattern();
-    const result = generateProgression(scale, root, pattern.steps, togglesToOptions(toggles));
+    const result = generateProgressionFromNotes(
+      scaleNotes,
+      tonic,
+      pattern.steps,
+      togglesToOptions(toggles)
+    );
     setPool(result.pool);
     setSlots(result.slots);
     setSwapIndex(null);
@@ -67,21 +70,12 @@ export function ProgressionGeneratorTool() {
 
   return (
     <div className="space-y-4">
-      <Panel className="p-4">
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div>
-            <SectionLabel>Root</SectionLabel>
-            <KeySelector value={root} onChange={setRoot} />
-          </div>
-          <div>
-            <SectionLabel>Scale</SectionLabel>
-            <ScalePicker value={scaleId} onChange={(s) => setScaleId(s.id)} />
-          </div>
-        </div>
-        <div className="mt-4">
-          <Keyboard highlights={scaleHighlights(scale, root)} height={120} />
-        </div>
-      </Panel>
+      <div>
+        <p className="mb-2 text-xs text-neutral-400">
+          Using the scale selected in the Scale Explorer tab.
+        </p>
+        <ScaleInfoCard notes={scaleNotes} tonic={tonic} />
+      </div>
 
       <Panel className="p-4">
         <SectionLabel>Progression style</SectionLabel>
@@ -100,7 +94,7 @@ export function ProgressionGeneratorTool() {
             onClick={() => setPatternId("random")}
             className={` px-3 py-1.5 text-xs font-semibold transition ${
               patternId === "random"
-                ? "bg-ocean-500 text-white"
+                ? "bg-mist-500 text-neutral-900"
                 : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
             }`}
           >
@@ -112,7 +106,7 @@ export function ProgressionGeneratorTool() {
               onClick={() => setPatternId(p.id)}
               className={` px-3 py-1.5 text-xs font-medium transition ${
                 patternId === p.id
-                  ? "bg-ocean-500 text-white"
+                  ? "bg-mist-500 text-neutral-900"
                   : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
               }`}
             >
@@ -123,19 +117,10 @@ export function ProgressionGeneratorTool() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            <Toggle checked={toggles.aug} onChange={(v) => setToggles({ ...toggles, aug: v })} label="Augmented" />
-            <Toggle checked={toggles.dim} onChange={(v) => setToggles({ ...toggles, dim: v })} label="Diminished" />
-            <Toggle checked={toggles.sus} onChange={(v) => setToggles({ ...toggles, sus: v })} label="Suspended" />
-            <Toggle
-              checked={toggles.unconventional}
-              onChange={(v) => setToggles({ ...toggles, unconventional: v })}
-              label="Unconventional"
-            />
-          </div>
+          <ChordToggleBar toggles={toggles} onChange={setToggles} />
           <button
             onClick={generate}
-            className="bg-coral-500 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-coral-400"
+            className="bg-mist-500 px-5 py-2.5 text-sm font-bold text-neutral-900 shadow-lg transition hover:bg-mist-400"
           >
             Generate progression
           </button>
@@ -151,6 +136,7 @@ export function ProgressionGeneratorTool() {
                 <SlotCard
                   slot={slot}
                   active={swapIndex === i}
+                  context={scaleNotes}
                   onClick={() => setSwapIndex(swapIndex === i ? null : i)}
                 />
                 {i < slots.length - 1 && <span className="text-neutral-600">→</span>}
@@ -162,6 +148,7 @@ export function ProgressionGeneratorTool() {
             <SwapPanel
               slot={slots[swapIndex]}
               candidates={candidatesForFunction(pool, slots[swapIndex].func)}
+              context={scaleNotes}
               onPick={(c) => setSlotChord(swapIndex, c)}
               onReroll={() => rerollSlot(swapIndex)}
             />
@@ -175,10 +162,12 @@ export function ProgressionGeneratorTool() {
 function SlotCard({
   slot,
   active,
+  context,
   onClick,
 }: {
   slot: ProgressionSlot;
   active: boolean;
+  context: PitchClass[];
   onClick: () => void;
 }) {
   const s = FUNCTION_STYLE[slot.func];
@@ -194,11 +183,11 @@ function SlotCard({
         {slot.chord && <RomanBadge roman={slot.chord.roman} />}
       </div>
       <div className="mt-1 text-sm font-bold text-neutral-100">
-        {slot.chord ? slot.chord.name : "—"}
+        {slot.chord ? `${spellNote(slot.chord.root, context)} ${slot.chord.chord.abbr}` : "—"}
       </div>
       <div className="mt-1 flex flex-wrap gap-0.5">
         {slot.chord?.notes.map((pc, i) => (
-          <NoteChip key={i} name={noteName(pc)} size="sm" />
+          <NoteChip key={i} name={spellNote(pc, context)} size="sm" />
         ))}
       </div>
     </button>
@@ -208,11 +197,13 @@ function SlotCard({
 function SwapPanel({
   slot,
   candidates,
+  context,
   onPick,
   onReroll,
 }: {
   slot: ProgressionSlot;
   candidates: ResolvedChord[];
+  context: PitchClass[];
   onPick: (c: ResolvedChord) => void;
   onReroll: () => void;
 }) {
@@ -237,7 +228,7 @@ function SwapPanel({
             onClick={() => onPick(c)}
             className={` px-2.5 py-1.5 text-xs font-semibold transition ${
               slot.chord?.id === c.id
-                ? "bg-ocean-500 text-white"
+                ? "bg-mist-500 text-neutral-900"
                 : "bg-neutral-800 text-neutral-200 hover:bg-neutral-700"
             }`}
             title={c.chord.name}
@@ -246,7 +237,7 @@ function SwapPanel({
               {c.roman.numeral}
               {c.roman.suffix}
             </span>
-            {c.name}
+            {spellNote(c.root, context)} {c.chord.abbr}
           </button>
         ))}
       </div>

@@ -22,15 +22,23 @@ Working agreement for AI assistants in this repo. **Follow these rules strictly.
 - **Never use emojis** anywhere — not in UI/JSX, labels, comments, commit messages, or chat.
 - **No rounded corners.** All corners are sharp. A global `border-radius: 0 !important` reset lives in
   `src/index.css`; do not add `rounded-*` Tailwind classes or `border-radius` values.
-- **Neutral-grey base + an ocean accent palette.** Base greys use Tailwind **`neutral`** (true grey —
+- **Neutral-grey base + a functional accent palette.** Base greys use Tailwind **`neutral`** (true grey —
   never `slate`/`gray`/`zinc`, which are tinted). Color is reserved for meaning/interaction, drawn from
-  the ocean palette defined in `tailwind.config.js`:
+  the accent palette defined in `tailwind.config.js`. Token names are kept for continuity even where the
+  hue has moved (notably `coral` now renders purple).
   Notes and function badges are colour-coordinated by harmonic function relative to the tonic:
-  - `coral` — Tonic (T): the tonic/root note in selectors, the T badge, primary CTAs.
-  - `kelp` — Pre-Dominant (PD): PD-function notes and the PD badge (subdued green).
-  - `reef` — Dominant (D): D-function notes, the D badge, enabled toggles (bright green).
-  - `ocean` — everything else: non-functional scale notes, active buttons/tabs, the logo (subdued blue).
+  - `coral` — Tonic (T): the tonic/root note in selectors, the T badge, primary CTAs (`#7a3876` purple).
+  - `kelp` — Pre-Dominant (PD): PD-function notes and the PD badge (`#3ab159` subdued green).
+  - `reef` — Dominant (D): D-function notes, the D badge, enabled toggles (`#4ed05d` bright green).
+  - `ocean` — non-functional scale notes only (`#48639b` blue).
   - `sun` — bright yellow pop (e.g. common-note highlight on the Transition tool's keyboard).
+  The function tokens above (`coral`/`kelp`/`reef`/`ocean`) carry harmonic meaning and are used
+  **only** on note/function UI, never on generic controls. Interactive chrome uses its own
+  non-semantic token so UI colour never reads as harmonic meaning:
+  - `mist` — general UI accent (`#8fa3cc` blue-grey): active buttons/tabs, the Segmented control,
+    Toggle indicators, checkboxes, non-note selectors (scale picker), the info-button active
+    state, and the logo. Filled `mist` uses dark text (`text-neutral-900`) for contrast. Do not
+    use a function token for a plain control, or `mist` for anything that encodes a note function.
   The overlap/pivot note-squares reuse this same function colour coding (`noteFnFill`) for shared
   notes, relative to the main scale's tonic; non-shared notes stay dim neutral.
   Do not introduce blue/indigo/violet/purple/fuchsia/cyan/amber Tailwind palettes — use these tokens.

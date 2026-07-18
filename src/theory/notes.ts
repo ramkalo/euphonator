@@ -18,7 +18,36 @@ export const NOTE_NAMES_SHARP = [
   "B",
 ] as const;
 
+export const NOTE_NAMES_FLAT = [
+  "C",
+  "Db",
+  "D",
+  "Eb",
+  "E",
+  "F",
+  "Gb",
+  "G",
+  "Ab",
+  "A",
+  "Bb",
+  "B",
+] as const;
+
 export const ALL_PITCH_CLASSES: PitchClass[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
+/** Pitch classes that fall on black keys (accidentals). */
+export const BLACK_PCS = new Set<PitchClass>([1, 3, 6, 8, 10]);
+
+// For each black key: the natural a semitone below (whose letter the sharp
+// spelling borrows) and the natural a semitone above (whose letter the flat
+// spelling borrows).
+const BLACK_NEIGHBOURS: Record<number, { lower: PitchClass; upper: PitchClass }> = {
+  1: { lower: 0, upper: 2 }, // C# / Db
+  3: { lower: 2, upper: 4 }, // D# / Eb
+  6: { lower: 5, upper: 7 }, // F# / Gb
+  8: { lower: 7, upper: 9 }, // G# / Ab
+  10: { lower: 9, upper: 11 }, // A# / Bb
+};
 
 /** Wrap any integer into the 0..11 pitch-class range. */
 export function mod12(n: number): PitchClass {
@@ -28,6 +57,25 @@ export function mod12(n: number): PitchClass {
 /** Name a pitch class (sharp spelling). */
 export function noteName(pc: PitchClass): string {
   return NOTE_NAMES_SHARP[mod12(pc)];
+}
+
+/**
+ * Spell a pitch class intelligently given the notes present as context.
+ * Naturals keep their letter. A black key prefers the spelling whose letter
+ * isn't already taken by a neighbour: if the lower natural is present and the
+ * upper isn't, use the flat (upper letter); if the upper is present and the
+ * lower isn't, use the sharp (lower letter); otherwise default to the sharp.
+ */
+export function spellNote(pc: PitchClass, context: Iterable<PitchClass>): string {
+  const p = mod12(pc);
+  if (!BLACK_PCS.has(p)) return NOTE_NAMES_SHARP[p];
+  const { lower, upper } = BLACK_NEIGHBOURS[p];
+  const ctx = new Set<PitchClass>();
+  for (const c of context) ctx.add(mod12(c));
+  const lowerTaken = ctx.has(lower);
+  const upperTaken = ctx.has(upper);
+  if (lowerTaken && !upperTaken) return NOTE_NAMES_FLAT[p];
+  return NOTE_NAMES_SHARP[p];
 }
 
 /** Transpose a pitch class by a number of semitones. */

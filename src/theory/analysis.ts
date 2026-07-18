@@ -31,29 +31,46 @@ import {
 // --- Chord pool selection ------------------------------------------------
 
 export interface ChordPoolOptions {
-  /** Major & minor triads are always included. */
+  /** Standard Major & minor triads. */
+  standard?: boolean;
   aug?: boolean;
   dim?: boolean;
   sus?: boolean;
-  unconventional?: boolean;
+  kamala?: boolean;
+  tanava?: boolean;
+  panka?: boolean;
+  sankula?: boolean;
 }
 
 export function chordPool(opts: ChordPoolOptions = {}): ChordType[] {
   return ALL_CHORD_TYPES.filter((c) => {
-    if (c.quality === "major" || c.quality === "minor") return true;
+    if (c.quality === "major" || c.quality === "minor") return !!opts.standard;
     if (c.quality === "augmented") return !!opts.aug;
     if (c.quality === "diminished") return !!opts.dim;
     if (c.quality === "sus") return !!opts.sus;
-    if (c.category === "unconventional") return !!opts.unconventional;
+    switch (c.family) {
+      case "kamala":
+        return !!opts.kamala;
+      case "tanava":
+        return !!opts.tanava;
+      case "panka":
+        return !!opts.panka;
+      case "sankula":
+        return !!opts.sankula;
+    }
     return false;
   });
 }
 
 export const FULL_POOL: ChordPoolOptions = {
+  standard: true,
   aug: true,
   dim: true,
   sus: true,
-  unconventional: true,
+  kamala: true,
+  tanava: true,
+  panka: true,
+  sankula: true,
 };
 
 // --- Resolved chord (a chord placed at a concrete root in a scale) -------
@@ -275,7 +292,29 @@ export function generateProgression(
   opts: ChordPoolOptions,
   rng: Rng = Math.random
 ): { pool: ResolvedChord[]; slots: ProgressionSlot[] } {
-  const pool = chordsInScale(scale, scaleRoot, opts);
+  return generateProgressionFromNotes(
+    scaleNotesAt(scale, scaleRoot),
+    scaleRoot,
+    steps,
+    opts,
+    rng
+  );
+}
+
+/**
+ * Same as {@link generateProgression} but works off a raw note set instead of a
+ * catalog `Scale`. This is what the Progression Generator uses, since the scale
+ * selection shared from Scale Explorer can be an arbitrary note set with no
+ * catalog scale id.
+ */
+export function generateProgressionFromNotes(
+  notes: PitchClass[],
+  tonic: PitchClass,
+  steps: HarmonicFunction[],
+  opts: ChordPoolOptions,
+  rng: Rng = Math.random
+): { pool: ResolvedChord[]; slots: ProgressionSlot[] } {
+  const pool = chordsInNotes(notes, tonic, opts);
   const slots = steps.map((func) => {
     const candidates = candidatesForFunction(pool, func);
     const chord = candidates.length
@@ -306,21 +345,42 @@ export function namedPentatonicName(pcs: PitchClass[], tonic: PitchClass): strin
   return match ? match.name : null;
 }
 
-/** Heptatonic scale names for a 7-note set (tonic-rooted reading listed first). */
-export function identifyHeptatonic(pcs: PitchClass[], tonic: PitchClass): string[] {
+/**
+ * Heptatonic scale readings for a 7-note set (tonic-rooted reading listed
+ * first). Returns the root pitch class and scale name so callers can spell the
+ * root however they like.
+ */
+export function identifyHeptatonic(
+  pcs: PitchClass[],
+  tonic: PitchClass
+): { root: PitchClass; name: string }[] {
   if (new Set(pcs).size !== 7) return [];
   const target = new Set(pcs);
-  const hits: { name: string; isTonic: boolean }[] = [];
+  const hits: { root: PitchClass; name: string; isTonic: boolean }[] = [];
   for (const scale of HEPTATONIC_SCALES) {
     for (let root = 0; root < 12; root++) {
       const notes = scaleNotesAt(scale, root);
       if (notes.length === target.size && notes.every((n) => target.has(n))) {
-        hits.push({ name: `${noteName(root)} ${scale.name}`, isTonic: root === tonic });
+        hits.push({ root, name: scale.name, isTonic: root === tonic });
       }
     }
   }
   hits.sort((a, b) => Number(b.isTonic) - Number(a.isTonic));
-  return hits.map((h) => h.name);
+  return hits.map((h) => ({ root: h.root, name: h.name }));
+}
+
+/**
+ * The id of a catalog scale whose notes, rooted at `tonic`, exactly equal `pcs`
+ * — heptatonic preferred, then a named pentatonic, then the RK pentatonic index.
+ * Lets the note-based selector map a built scale back onto the by-name picker.
+ * Returns null when no catalog scale matches (an arbitrary note set).
+ */
+export function scaleIdForNotes(pcs: PitchClass[], tonic: PitchClass): string | null {
+  const target = sortPcs(new Set(pcs)).join(",");
+  for (const s of [...HEPTATONIC_SCALES, ...NAMED_PENTATONICS, ...ALL_SCALES]) {
+    if (sortPcs(scaleNotesAt(s, tonic)).join(",") === target) return s.id;
+  }
+  return null;
 }
 
 // --- Overlap by shared-note count (dense table on the Chords page) -------

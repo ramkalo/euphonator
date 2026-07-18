@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { NOTE_NAMES_SHARP, noteName, PitchClass } from "../theory/notes";
+import { ALL_PITCH_CLASSES, BLACK_PCS, PitchClass, mod12, spellNote } from "../theory/notes";
 import { functionForRoot } from "../theory/functions";
 import {
   NAMED_PENTATONICS,
@@ -26,14 +26,16 @@ export function noteFnFill(pc: PitchClass, tonic: PitchClass | null): string {
 export function KeySelector({
   value,
   onChange,
+  context = [],
 }: {
   value: PitchClass;
   onChange: (pc: PitchClass) => void;
+  context?: PitchClass[];
 }) {
   return (
     <div className="flex flex-wrap gap-1">
-      {NOTE_NAMES_SHARP.map((name, pc) => {
-        const black = name.includes("#");
+      {ALL_PITCH_CLASSES.map((pc) => {
+        const black = BLACK_PCS.has(pc);
         const active = value === pc;
         return (
           <button
@@ -47,7 +49,7 @@ export function KeySelector({
                   : "bg-neutral-700/60 text-neutral-100 hover:bg-neutral-600"
             }`}
           >
-            {name}
+            {spellNote(pc, context)}
           </button>
         );
       })}
@@ -71,8 +73,8 @@ export function NoteMultiSelector({
   const sel = new Set(selected);
   return (
     <div className="flex flex-wrap gap-1">
-      {NOTE_NAMES_SHARP.map((name, pc) => {
-        const black = name.includes("#");
+      {ALL_PITCH_CLASSES.map((pc) => {
+        const black = BLACK_PCS.has(pc);
         const isSel = sel.has(pc);
         return (
           <button
@@ -86,7 +88,7 @@ export function NoteMultiSelector({
                   : "bg-neutral-700/60 text-neutral-100 hover:bg-neutral-600"
             }`}
           >
-            {name}
+            {spellNote(pc, selected)}
           </button>
         );
       })}
@@ -122,7 +124,7 @@ export function TonicRow({
             tonic
           )}`}
         >
-          {noteName(pc)}
+          {spellNote(pc, notes)}
         </button>
       ))}
     </div>
@@ -143,7 +145,7 @@ function ScaleButton({
       onClick={() => onChange(scale)}
       className={`px-3 py-1.5 text-sm font-medium transition ${
         value === scale.id
-          ? "bg-ocean-500 text-white shadow"
+          ? "bg-mist-500 text-neutral-900 shadow"
           : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
       }`}
       title={
@@ -171,8 +173,12 @@ function PickerRow({ label, children }: { label: string; children: ReactNode }) 
 }
 
 /**
- * Read-only display of a scale's notes (ordered from the tonic). Tonic shows in
- * the deeper amber; the rest in the lighter amber.
+ * Read-only display of a scale's own notes, ordered from the tonic and closing
+ * the octave by repeating the tonic at the end (e.g. C major -> C D E F G A B C).
+ * Unlike ScaleNotesDisplay this shows only the scale's notes, not the full
+ * chromatic strip. Each note is coloured by its harmonic function; beneath the
+ * row a semitone-step reminder sits centred in each gap (the last step wraps up
+ * to the tonic octave, so the steps sum to 12).
  */
 export function NoteDisplayRow({
   notes,
@@ -181,22 +187,56 @@ export function NoteDisplayRow({
   notes: PitchClass[];
   tonic: PitchClass | null;
 }) {
-  const sorted = [...notes].sort((a, b) => a - b);
-  const ti = tonic != null ? sorted.indexOf(tonic) : -1;
-  const ordered = ti >= 0 ? [...sorted.slice(ti), ...sorted.slice(0, ti)] : sorted;
+  const uniq = [...new Set(notes)].sort((a, b) => a - b);
+  const ti = tonic != null ? uniq.indexOf(tonic) : -1;
+  const ordered = ti >= 0 ? [...uniq.slice(ti), ...uniq.slice(0, ti)] : uniq;
+  const n = ordered.length;
+
+  // With 2+ notes, close the octave (repeat the starting note) and show the
+  // semitone step centred in each gap. mod12 keeps every step positive so the
+  // ascent across the octave sums to 12.
+  const showOctave = n >= 2;
+  const row = showOctave ? [...ordered, ordered[0]] : ordered;
+  const steps = showOctave
+    ? ordered.map((pc, i) => mod12(ordered[(i + 1) % n] - pc))
+    : [];
+
   return (
-    <div className="flex flex-wrap gap-1">
-      {ordered.map((pc) => (
-        <div
-          key={pc}
-          className={`grid h-9 w-10 place-items-center text-sm font-bold ${noteFnFill(
-            pc,
-            tonic
-          )}`}
-        >
-          {noteName(pc)}
+    <div>
+      <div className="flex gap-1">
+        {row.map((pc, i) => (
+          <div
+            key={i}
+            className={`grid h-9 w-10 place-items-center text-sm font-bold ${noteFnFill(
+              pc,
+              tonic
+            )}`}
+          >
+            {spellNote(pc, notes)}
+          </div>
+        ))}
+      </div>
+      {steps.length > 0 && (
+        <div className="relative mt-1">
+          {/* Invisible spacer matching the note squares so widths line up. */}
+          <div className="flex gap-1" aria-hidden>
+            {row.map((_, i) => (
+              <div key={i} className="h-4 w-10" />
+            ))}
+          </div>
+          {steps.map((step, i) => (
+            <span
+              key={i}
+              className="absolute top-0 -translate-x-1/2 font-mono text-xs text-neutral-500"
+              // Centre between square i and i+1: square stride 2.75rem
+              // (w-10 2.5rem + gap-1 0.25rem), gap centre at i*2.75 + 2.625rem.
+              style={{ left: `calc(${i} * 2.75rem + 2.625rem)` }}
+            >
+              +{step}
+            </span>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }

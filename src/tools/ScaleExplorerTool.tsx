@@ -1,17 +1,16 @@
 import { Fragment, useMemo, useState } from "react";
 import { FunctionBadge, RomanBadge } from "../components/badges";
-import { ScaleIdentity } from "../components/ScaleIdentity";
+import { ScaleInfoCard } from "../components/ScaleInfoCard";
+import { InfoButton } from "../components/InfoButton";
 import { Column, DataTable } from "../components/Table";
 import {
   KeySelector,
-  NoteDisplayRow,
   NoteMultiSelector,
   ScalePicker,
   SemitoneMap,
-  TonicRow,
   noteFnFill,
 } from "../components/selectors";
-import { FunctionLegend, Panel, SectionLabel, Segmented, Toggle } from "../components/ui";
+import { Panel, SectionLabel, Segmented } from "../components/ui";
 import {
   CommonOverlap,
   ResolvedChord,
@@ -19,40 +18,17 @@ import {
   overlapByCommon,
   pivotScales,
 } from "../theory/analysis";
-import { inversionsFor } from "../theory/chords";
-import { scaleNotesAt } from "../theory/functions";
-import { noteName, PitchClass } from "../theory/notes";
-import { ALL_SCALES, Scale, scaleById } from "../theory/scales";
+import { PitchClass, spellNote } from "../theory/notes";
+import { ALL_SCALES, Scale } from "../theory/scales";
+import { ScaleMode, ScaleSelection } from "./useScaleSelection";
+import { ChordToggleBar } from "./ChordToggleBar";
 import { DEFAULT_TOGGLES, togglesToOptions } from "./shared";
 
-type Mode = "notes" | "rootname";
-
-export function ChordsInScaleTool() {
-  const [mode, setMode] = useState<Mode>("notes");
-
-  // Note-based selection: the chosen notes, plus a separately-chosen tonic.
-  const [selected, setSelected] = useState<PitchClass[]>([0, 2, 4, 5, 7, 9, 11]);
-  const [tonicSel, setTonicSel] = useState<PitchClass | null>(0);
-
-  // Root + name selection.
-  const [root, setRoot] = useState<PitchClass>(0);
-  const [scaleId, setScaleId] = useState("major");
+export function ScaleExplorerTool({ scale }: { scale: ScaleSelection }) {
+  const { mode, tonic, selected, scaleId, notes } = scale;
 
   const [toggles, setToggles] = useState({ ...DEFAULT_TOGGLES });
   const opts = togglesToOptions(toggles);
-
-  // Resolve the active note set + tonic from whichever selector is in use.
-  const { notes, tonic } = useMemo(() => {
-    if (mode === "notes") {
-      const t =
-        tonicSel != null && selected.includes(tonicSel)
-          ? tonicSel
-          : ([...selected].sort((a, b) => a - b)[0] ?? null);
-      return { notes: selected, tonic: t };
-    }
-    const scale = scaleById(scaleId)!;
-    return { notes: scaleNotesAt(scale, root), tonic: root as PitchClass };
-  }, [mode, selected, tonicSel, scaleId, root]);
 
   const chords = useMemo(
     () => (tonic == null ? [] : chordsInNotes(notes, tonic, opts)),
@@ -63,9 +39,9 @@ export function ChordsInScaleTool() {
     // In root+name mode, drop the exact scale the user picked (but keep other
     // scales with the same notes, e.g. A Natural minor when C Major is chosen).
     const exclude =
-      mode === "rootname" ? { excludeScaleId: scaleId, excludeRoot: root } : {};
-    return overlapByCommon(notes, tonic ?? notes[0], { minCommon: 5, opts, ...exclude });
-  }, [mode, notes, tonic, scaleId, root, toggles]);
+      mode === "rootname" ? { excludeScaleId: scaleId, excludeRoot: tonic } : {};
+    return overlapByCommon(notes, tonic, { minCommon: 5, opts, ...exclude });
+  }, [mode, notes, tonic, scaleId, toggles]);
 
   // A scale checked in the overlap table becomes the second source for pivots.
   const [pivotKey, setPivotKey] = useState<string | null>(null);
@@ -75,109 +51,83 @@ export function ChordsInScaleTool() {
     return pivotScales(notes, tonic, pivotSource.notes, { minCommon: 5, opts });
   }, [notes, tonic, pivotSource, toggles]);
 
-  function toggleNote(pc: PitchClass) {
-    const has = selected.includes(pc);
-    const next = has ? selected.filter((n) => n !== pc) : [...selected, pc];
-    setSelected(next);
-    if (!has && tonicSel == null) setTonicSel(pc);
-    else if (has && tonicSel === pc) {
-      setTonicSel([...next].sort((a, b) => a - b)[0] ?? null);
-    }
-  }
-
-  function resetNotes(pcs: PitchClass[], newTonic: PitchClass | null) {
-    setSelected(pcs);
-    setTonicSel(newTonic);
-  }
+  // Scale-builder handlers (setTonic, toggleNote, changeMode, resetNotes,
+  // setScaleId) come from the shared selection so the Progression Generator sees
+  // the same scale.
+  const { setTonic, toggleNote, changeMode, resetNotes, setScaleId } = scale;
 
   return (
     <div className="space-y-4">
-      <Panel className="p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Segmented<Mode>
-            options={[
-              { value: "notes", label: "Build" },
-              { value: "rootname", label: "Select" },
-            ]}
-            value={mode}
-            onChange={setMode}
-          />
-          {mode === "notes" && <ScaleIdentity notes={notes} tonic={tonic} />}
-        </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Card 1: Scale Selector */}
+        <Panel className="p-4">
+          <div className="space-y-4">
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <SectionLabel>Tonic</SectionLabel>
+                <InfoButton label="What is a tonic?">
+                  The tonic is the note that feels like "home." It's the note a
+                  tune tends to rest on and sound finished on. A scale or key is
+                  named after its tonic, so picking one sets the center that
+                  every other note is heard in relation to.
+                </InfoButton>
+              </div>
+              <KeySelector value={tonic} onChange={setTonic} context={notes} />
+            </div>
 
-        {mode === "notes" ? (
-          <div className="mt-4 space-y-3">
             <div>
-              <SectionLabel>Select Notes</SectionLabel>
-              <NoteMultiSelector selected={selected} tonic={tonic} onToggle={toggleNote} />
-              <SemitoneMap notes={selected} />
+              <SectionLabel>Choose by</SectionLabel>
+              <Segmented<ScaleMode>
+                options={[
+                  { value: "notes", label: "Notes" },
+                  { value: "rootname", label: "By name" },
+                ]}
+                value={mode}
+                onChange={changeMode}
+              />
             </div>
-            <div>
-              <SectionLabel>Select Tonic</SectionLabel>
-              <TonicRow notes={selected} tonic={tonic} onPick={setTonicSel} />
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                onClick={() => resetNotes([], null)}
-                className="bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-300 hover:bg-neutral-700"
-              >
-                Clear
-              </button>
-              <button
-                onClick={() => resetNotes([0, 2, 4, 5, 7, 9, 11], 0)}
-                className="bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-300 hover:bg-neutral-700"
-              >
-                Reset to C Major
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <div>
-              <SectionLabel>Root</SectionLabel>
-              <KeySelector value={root} onChange={setRoot} />
-            </div>
-            <div>
-              <SectionLabel>Scale</SectionLabel>
-              <ScalePicker value={scaleId} onChange={(s) => setScaleId(s.id)} />
-            </div>
-            <div className="lg:col-span-2">
-              <SectionLabel>Notes</SectionLabel>
-              <NoteDisplayRow notes={notes} tonic={tonic} />
-            </div>
-          </div>
-        )}
 
-        <FunctionLegend className="mt-4 border-t border-neutral-800 pt-4" />
-      </Panel>
+            {mode === "notes" ? (
+              <div className="space-y-3">
+                <div>
+                  <SectionLabel>Select Notes</SectionLabel>
+                  <NoteMultiSelector selected={selected} tonic={tonic} onToggle={toggleNote} />
+                  <SemitoneMap notes={selected} />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => resetNotes([tonic], tonic)}
+                    className="bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-300 hover:bg-neutral-700"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={() => resetNotes([0, 2, 4, 5, 7, 9, 11], 0)}
+                    className="bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-300 hover:bg-neutral-700"
+                  >
+                    Reset to C Major
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <SectionLabel>Scale</SectionLabel>
+                <ScalePicker value={scaleId} onChange={(s) => setScaleId(s.id)} />
+              </div>
+            )}
+          </div>
+        </Panel>
+
+        {/* Card 2: Scale Info */}
+        <ScaleInfoCard notes={notes} tonic={tonic} />
+      </div>
 
       <Panel className="p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <SectionLabel>Chords in Scale</SectionLabel>
-          <div className="flex flex-wrap gap-2">
-            <Toggle
-              checked={toggles.aug}
-              onChange={(v) => setToggles({ ...toggles, aug: v })}
-              label="Augmented"
-            />
-            <Toggle
-              checked={toggles.dim}
-              onChange={(v) => setToggles({ ...toggles, dim: v })}
-              label="Diminished"
-            />
-            <Toggle
-              checked={toggles.sus}
-              onChange={(v) => setToggles({ ...toggles, sus: v })}
-              label="Suspended"
-            />
-            <Toggle
-              checked={toggles.unconventional}
-              onChange={(v) => setToggles({ ...toggles, unconventional: v })}
-              label="Unconventional"
-            />
-          </div>
+          <ChordToggleBar toggles={toggles} onChange={setToggles} />
         </div>
-        <ChordTable chords={chords} />
+        <ChordTable chords={chords} context={notes} />
       </Panel>
 
       <Panel className="p-4">
@@ -217,19 +167,25 @@ export function ChordsInScaleTool() {
   );
 }
 
-function ChordTable({ chords }: { chords: ResolvedChord[] }) {
+function ChordTable({
+  chords,
+  context,
+}: {
+  chords: ResolvedChord[];
+  context: PitchClass[];
+}) {
   const columns: Column<ResolvedChord>[] = [
     {
       key: "full",
       header: "Full name",
       className: "font-semibold text-neutral-100",
-      render: (c) => `${noteName(c.root)} ${c.chord.name}`,
+      render: (c) => `${spellNote(c.root, context)} ${c.chord.name}`,
     },
     {
       key: "chord",
       header: "Chord",
       className: "font-semibold text-neutral-100",
-      render: (c) => c.name,
+      render: (c) => `${spellNote(c.root, context)} ${c.chord.abbr}`,
     },
     {
       key: "shape",
@@ -241,16 +197,29 @@ function ChordTable({ chords }: { chords: ResolvedChord[] }) {
       key: "notes",
       header: "Notes",
       className: "font-mono text-neutral-300",
-      render: (c) => c.notes.map(noteName).join(" "),
+      render: (c) => c.notes.map((pc) => spellNote(pc, context)).join(" "),
     },
     {
-      key: "inv",
-      header: "Inversions",
-      className: "text-neutral-400",
-      render: (c) => {
-        const inv = inversionsFor(c.chord.abbr);
-        return inv.length ? inv.map((i) => i.abbr).join(", ") : "—";
-      },
+      key: "inv1",
+      header: "First Inversion",
+      className: "font-mono text-neutral-300",
+      render: (c) =>
+        c.notes.length < 3
+          ? "—"
+          : [c.notes[1], c.notes[2], c.notes[0]]
+              .map((pc) => spellNote(pc, context))
+              .join(" "),
+    },
+    {
+      key: "inv2",
+      header: "Second Inversion",
+      className: "font-mono text-neutral-300",
+      render: (c) =>
+        c.notes.length < 3
+          ? "—"
+          : [c.notes[2], c.notes[0], c.notes[1]]
+              .map((pc) => spellNote(pc, context))
+              .join(" "),
     },
     {
       key: "func",
@@ -398,7 +367,7 @@ function NoteSquares({
             sharedSet.has(pc) ? noteFnFill(pc, tonic) : "bg-neutral-800 text-neutral-500"
           }`}
         >
-          {noteName(pc)}
+          {spellNote(pc, notes)}
         </span>
       ))}
     </div>
@@ -413,10 +382,12 @@ function ChordChips({
   chords,
   common,
   tonic,
+  context,
 }: {
   chords: ResolvedChord[];
   common: PitchClass[];
   tonic: PitchClass;
+  context: PitchClass[];
 }) {
   if (chords.length === 0) return <span className="text-neutral-500">—</span>;
   const commonSet = new Set(common);
@@ -431,7 +402,7 @@ function ChordChips({
               shared ? noteFnFill(c.root, tonic) : "bg-neutral-800/60 text-neutral-500"
             }`}
           >
-            {c.name}
+            {spellNote(c.root, context)} {c.chord.abbr}
           </span>
         );
       })}
@@ -522,7 +493,7 @@ function OverlapAccordion({
                       <tr
                         key={key}
                         className={`border-b border-neutral-800/70 hover:bg-neutral-800/40 ${
-                          selectable && selectedKey === key ? "bg-ocean-500/10" : ""
+                          selectable && selectedKey === key ? "bg-mist-500/10" : ""
                         }`}
                       >
                         {selectable && (
@@ -531,13 +502,13 @@ function OverlapAccordion({
                               type="checkbox"
                               checked={selectedKey === key}
                               onChange={() => onSelect?.(o)}
-                              className="h-4 w-4 accent-ocean-500"
+                              className="h-4 w-4 accent-mist-500"
                               aria-label={`Use ${o.name} as pivot source`}
                             />
                           </td>
                         )}
                         <td className="px-10 py-1.5 pl-7 align-top font-semibold text-neutral-100">
-                          {o.name}
+                          {spellNote(o.root, o.notes)} {o.scale.name}
                         </td>
                         <td className="px-10 py-1.5 align-top font-mono text-neutral-300">
                           {o.code}
@@ -546,7 +517,12 @@ function OverlapAccordion({
                           <NoteSquares notes={o.notes} shared={o.common} tonic={tonic} />
                         </td>
                         <td className="w-full px-10 py-1.5 align-top">
-                          <ChordChips chords={o.scaleChords} common={o.common} tonic={tonic} />
+                          <ChordChips
+                            chords={o.scaleChords}
+                            common={o.common}
+                            tonic={tonic}
+                            context={o.notes}
+                          />
                         </td>
                       </tr>
                     );

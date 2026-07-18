@@ -5,27 +5,41 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Ocean palette — subdued blues/greens with bright coral/yellow/green pops.
+        // Functional palette — non-functional blue (ocean), purple Tonic (coral),
+        // and two greens for PD (kelp) / D (reef), with a bright yellow pop (sun).
+        // Token names are kept for continuity; coral now renders purple.
         // Base greys use Tailwind `neutral` (true grey, no blue tint).
+        // `mist` is the neutral UI-chrome accent (buttons/toggles/tabs/checkboxes/
+        // selectors) — deliberately NOT a note-function colour, so UI colour never
+        // reads as harmonic meaning.
+        mist: {
+          300: "#b9c6df",
+          400: "#a4b5d5",
+          500: "#8fa3cc",
+          600: "#738cbf",
+          ink: "#19202e",
+        },
         ocean: {
-          300: "#7cc4dd",
-          400: "#4aa3c4",
-          500: "#2c7da0",
-          600: "#22637f",
-          700: "#1b4d63",
-          ink: "#0a2833",
+          300: "#8fa3cc",
+          400: "#6984ba",
+          500: "#48639b",
+          600: "#384e7a",
+          700: "#2b3c5e",
+          ink: "#141b29",
         },
         kelp: {
-          400: "#5aa892",
-          500: "#3f8f7d",
-          600: "#2f6f61",
-          ink: "#0d332a",
+          // Pre-Dominant (PD) — subdued green
+          400: "#59c977",
+          500: "#3ab159",
+          600: "#2d8b46",
+          ink: "#14341c",
         },
         coral: {
-          400: "#ff8a7a",
-          500: "#ff6f61",
-          600: "#e8503f",
-          ink: "#5c1a12",
+          // Tonic (T) — now purple
+          400: "#a14a9b",
+          500: "#7a3876",
+          600: "#5e2b5b",
+          ink: "#321b30",
         },
         sun: {
           300: "#ffdd8f",
@@ -34,10 +48,11 @@ export default {
           ink: "#5c4212",
         },
         reef: {
-          400: "#3ddc97",
-          500: "#20c997",
-          600: "#12a880",
-          ink: "#083126",
+          // Dominant (D) — bright green
+          400: "#76db82",
+          500: "#4ed05d",
+          600: "#2da93c",
+          ink: "#123616",
         },
       },
       fontFamily: {

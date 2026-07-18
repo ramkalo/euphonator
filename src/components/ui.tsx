@@ -94,7 +94,7 @@ export function Segmented<T extends string>({
           onClick={() => onChange(o.value)}
           className={`${pad}  font-medium transition ${
             value === o.value
-              ? "bg-ocean-500 text-white shadow"
+              ? "bg-mist-500 text-neutral-900 shadow"
               : "text-neutral-300 hover:bg-neutral-700/60"
           }`}
         >
@@ -111,7 +111,7 @@ export function Toggle({
   checked,
   onChange,
   label,
-  accent = "bg-reef-500",
+  accent = "bg-mist-500",
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;

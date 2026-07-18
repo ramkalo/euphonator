@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shapeToPitchClasses, realize, noteName } from "../notes";
+import { shapeToPitchClasses, realize, noteName, spellNote } from "../notes";
 import { UNCONVENTIONAL_CHORDS, chordByAbbr } from "../chords";
 import {
   PENTATONIC_SCALES,
@@ -10,11 +10,14 @@ import {
   scaleById,
 } from "../scales";
 import {
+  chordPool,
   chordsInNotes,
   chordsInScale,
+  generateProgressionFromNotes,
   identifyHeptatonic,
   identifyPentatonic,
   namedPentatonicName,
+  scaleIdForNotes,
   overlapByCommon,
   pivotScales,
   scaleOverlap,
@@ -70,6 +73,32 @@ describe("chord math (doc worked examples)", () => {
     for (const chord of UNCONVENTIONAL_CHORDS) {
       expect(names(realize(C, chord.fromRoot))).toEqual(expected[chord.abbr]);
     }
+  });
+
+  it("every unconventional chord is tagged into a family (Tanava 6, Kamala 2, Sankula 3, Panka 3)", () => {
+    const counts = { kamala: 0, tanava: 0, panka: 0, sankula: 0 };
+    for (const chord of UNCONVENTIONAL_CHORDS) {
+      expect(chord.family).toBeDefined();
+      counts[chord.family!] += 1;
+    }
+    expect(counts).toEqual({ tanava: 6, kamala: 2, sankula: 3, panka: 3 });
+    // Outliers explicitly assigned to Tanava.
+    expect(chordByAbbr("ChrClst")!.family).toBe("tanava");
+    expect(chordByAbbr("F32")!.family).toBe("tanava");
+  });
+
+  it("chordPool filters by family and gates standard triads", () => {
+    // A single family flag returns exactly that family, no Major/minor.
+    const tanava = chordPool({ tanava: true });
+    expect(tanava.map((c) => c.abbr).sort()).toEqual(
+      ["ChrClst", "F32", "Tan", "kTan", "mTan", "rTan"].sort()
+    );
+    // Standard gates Major & minor.
+    expect(chordPool({}).map((c) => c.abbr)).not.toContain("Maj");
+    const std = chordPool({ standard: true }).map((c) => c.abbr);
+    expect(std).toContain("Maj");
+    expect(std).toContain("min");
+    expect(std).not.toContain("Aug");
   });
 });
 
@@ -210,6 +239,25 @@ describe("v2: chordsInNotes matches chordsInScale", () => {
   });
 });
 
+describe("generateProgressionFromNotes (Progression Generator)", () => {
+  it("builds a T-PD-D progression from the C Major note set", () => {
+    const notes = scaleNotesAt(scaleById("major")!, 0);
+    const steps: ("T" | "PD" | "D")[] = ["T", "PD", "D"];
+    const opts = { standard: true, aug: true, dim: true, sus: false };
+    const { pool, slots } = generateProgressionFromNotes(notes, 0, steps, opts);
+    // Pool is the same as the note-set chord list under the same options.
+    expect(new Set(pool.map((c) => c.id))).toEqual(
+      new Set(chordsInNotes(notes, 0, opts).map((c) => c.id))
+    );
+    // Every slot gets a chord whose function matches the requested step.
+    expect(slots).toHaveLength(3);
+    slots.forEach((slot, i) => {
+      expect(slot.chord).not.toBeNull();
+      expect(slot.chord!.func).toBe(steps[i]);
+    });
+  });
+});
+
 describe("v2: scale identification", () => {
   it("identifyPentatonic on major-pentatonic notes -> #66 (2232)", () => {
     const p = identifyPentatonic([0, 2, 4, 7, 9]);
@@ -225,13 +273,58 @@ describe("v2: scale identification", () => {
 
   it("identifyHeptatonic on C major set lists C Major and A Natural minor", () => {
     const notes = scaleNotesAt(scaleById("major")!, 0);
-    const names = identifyHeptatonic(notes, 0);
-    expect(names[0]).toBe("C Major"); // tonic-rooted reading first
-    expect(names).toContain("A Natural minor");
+    const hits = identifyHeptatonic(notes, 0);
+    const labels = hits.map((h) => `${noteName(h.root)} ${h.name}`);
+    expect(labels[0]).toBe("C Major"); // tonic-rooted reading first
+    expect(labels).toContain("A Natural minor");
   });
 
   it("intervalCode of C major is 2212221", () => {
     expect(intervalCode(scaleById("major")!.fromRoot)).toBe("2212221");
+  });
+});
+
+describe("scaleIdForNotes (map a note set back to a catalog scale)", () => {
+  it("identifies C natural minor from its notes at tonic C", () => {
+    const notes = scaleNotesAt(scaleById("natural-minor")!, 0);
+    expect(scaleIdForNotes(notes, 0)).toBe("natural-minor");
+  });
+
+  it("round-trips: notes of a scale at a root resolve back to that scale id", () => {
+    const major = scaleNotesAt(scaleById("major")!, 7); // G major
+    expect(scaleIdForNotes(major, 7)).toBe("major");
+  });
+
+  it("returns null for an arbitrary non-catalog set", () => {
+    expect(scaleIdForNotes([0, 1, 2], 0)).toBeNull();
+  });
+});
+
+describe("spellNote (context-aware enharmonic spelling)", () => {
+  it("naturals always keep their letter", () => {
+    for (const pc of [0, 2, 4, 5, 7, 9, 11]) {
+      expect(spellNote(pc, [])).toBe(noteName(pc));
+    }
+  });
+
+  it("prefers the flat when the lower natural is taken and the upper is free", () => {
+    expect(spellNote(3, [0, 2, 5])).toBe("Eb"); // D present, E absent
+  });
+
+  it("prefers the sharp when the upper natural is taken and the lower is free", () => {
+    expect(spellNote(3, [0, 4])).toBe("D#"); // E present, D absent
+  });
+
+  it("spells diatonic scales conventionally", () => {
+    const fMajor = scaleNotesAt(scaleById("major")!, 5); // F G A Bb C D E
+    expect(spellNote(10, fMajor)).toBe("Bb");
+    const gMajor = scaleNotesAt(scaleById("major")!, 7); // G A B C D E F#
+    expect(spellNote(6, gMajor)).toBe("F#");
+  });
+
+  it("defaults to sharp on ties (isolated key or both neighbours present)", () => {
+    expect(spellNote(6, [0])).toBe("F#"); // neither neighbour present
+    expect(spellNote(1, [0, 2])).toBe("C#"); // both C and D present
   });
 });
 
