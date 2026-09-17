@@ -19,10 +19,15 @@ import {
   pivotScales,
 } from "../theory/analysis";
 import { PitchClass, spellNote } from "../theory/notes";
+import { ALL_CHORD_TYPES } from "../theory/chords";
 import { ALL_SCALES, Scale } from "../theory/scales";
 import { ScaleMode, ScaleSelection } from "./useScaleSelection";
 import { ChordToggleBar } from "./ChordToggleBar";
 import { DEFAULT_TOGGLES, togglesToOptions } from "./shared";
+
+// Stable "by type" ordering: catalog order (Major, minor, Aug, dim, Sus2, Sus4,
+// then the unconventional families), so chords of the same type group together.
+const CHORD_TYPE_ORDER = new Map(ALL_CHORD_TYPES.map((c, i) => [c.abbr, i]));
 
 export function ScaleExplorerTool({ scale }: { scale: ScaleSelection }) {
   const { mode, tonic, selected, scaleId, notes } = scale;
@@ -30,10 +35,21 @@ export function ScaleExplorerTool({ scale }: { scale: ScaleSelection }) {
   const [toggles, setToggles] = useState({ ...DEFAULT_TOGGLES });
   const opts = togglesToOptions(toggles);
 
+  // Chords in scale-degree order ("by key"); resorted below for "by type".
+  const [chordSort, setChordSort] = useState<"type" | "key">("type");
   const chords = useMemo(
     () => (tonic == null ? [] : chordsInNotes(notes, tonic, opts)),
     [notes, tonic, toggles]
   );
+  const sortedChords = useMemo(() => {
+    if (chordSort === "key") return chords; // already degree/root order
+    return [...chords].sort(
+      (a, b) =>
+        (CHORD_TYPE_ORDER.get(a.chord.abbr) ?? Number.MAX_SAFE_INTEGER) -
+          (CHORD_TYPE_ORDER.get(b.chord.abbr) ?? Number.MAX_SAFE_INTEGER) ||
+        a.degreeIndex - b.degreeIndex
+    );
+  }, [chords, chordSort]);
   const overlaps = useMemo(() => {
     if (notes.length === 0) return [];
     // In root+name mode, drop the exact scale the user picked (but keep other
@@ -125,9 +141,20 @@ export function ScaleExplorerTool({ scale }: { scale: ScaleSelection }) {
       <Panel className="p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <SectionLabel>Chords in Scale</SectionLabel>
-          <ChordToggleBar toggles={toggles} onChange={setToggles} />
+          <div className="flex flex-wrap items-center gap-3">
+            <Segmented<"type" | "key">
+              options={[
+                { value: "type", label: "By type" },
+                { value: "key", label: "By key" },
+              ]}
+              value={chordSort}
+              onChange={setChordSort}
+              size="sm"
+            />
+            <ChordToggleBar toggles={toggles} onChange={setToggles} />
+          </div>
         </div>
-        <ChordTable chords={chords} context={notes} />
+        <ChordTable chords={sortedChords} context={notes} />
       </Panel>
 
       <Panel className="p-4">
